@@ -1,62 +1,81 @@
 import sys
 from PyQt6.QtCore import Qt
-
+import math
 from PyQt6.QtGui import *
 from PyQt6.QtWidgets import (
     QApplication,
     QPushButton,
     QWidget,
-    QTableWidget,QTableWidgetItem, QGridLayout
+    QTableWidget,QTableWidgetItem, QGridLayout, QSpinBox
 )
 
 from PyQt6.QtWidgets import QApplication, QStyledItemDelegate, QWidget
 from PyQt6.QtCore import Qt
 
+'''
+11/17
+
+Current Issues:
+
+Cells are turning into ints and viceversa, hard for cell validation and they turn into qspinboxes sometimes
+
+Solved qspinbox issue, this is what happens when the qtablewidgetitem becomes an actual int
+
+some boxes are 'sticky' and they stay after clearing or solvingnbn
+'''
 
 class CellDelegate(QStyledItemDelegate):
     def createEditor(self, parent, option, index):
+        
         validator = QIntValidator(0,9,self)
         editor = QStyledItemDelegate.createEditor(self, parent, option, index)
         editor.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        editor.setValidator(validator)
+        
+        if(not isinstance(editor, QSpinBox) ):
+            
+            editor.setValidator(validator)
         return editor
 
 class Window(QWidget):
 
     
-
+    '''Display Internal Values on TableWidgets'''
     def displayValues(self):
-        for a in range(9):
-            print(a)
+        for a in range(3):
+            
             for b in range(9):
-                row = 0
-                col = 0
-                if(b < 3):
-                    row = 0
-                    col = b
-                elif(b > 2 and b < 6):
-                    row = 1
-                    col = b-3
-                else:
-                    row = 2
-                    col = b-6   
+                box = 3*a
+                offset = b
+ 
+                if(b in [1,4,7]):
+                    offset -= 1
+                    box += 1
+                    
+                elif(b in [2,5,8]):
+                    offset -= 2
+                    box += 2
 
-                cellUsed = self.table[a].item(row,col)          
-                if(cellUsed is not None):
-                    print(cellUsed.type)
-                    cellUsed.setData(Qt.ItemDataRole.DisplayRole,0)
-       
-        for a in range(9):
-            for b in range(9):
-                # cellUsed = self.table[a].item(2,2)
-                # cellUsed.setData(Qt.ItemDataRole.DisplayRole,0)
+                offset = math.floor(offset / 3)
+                
+                first = self.table[box].item(offset,0)    
+                second = self.table[box].item(offset,1) 
+                third = self.table[box].item(offset,2) 
+                        
+                if(None is not first and None is not second and None is not third):
+                    col = 0
+                    row = offset
+                    if(box in [1,4,7]): col += 3
 
-                self.table[a].item().setData(Qt.ItemDataRole,self.b[a][0+b])
-                self.table[a][1+b].setData(Qt.ItemDataRole,self.b[a][1+b])
-                self.table[a][2+b].setData(Qt.ItemDataRole,self.b[a][2+b])
-                # self.table[a][0+b] = self.b[a][0+b]
-                # self.table[a][1+b] = self.b[a][1+b]
-                # self.table[a][2+b] = self.b[a][2+b]
+                    elif(box in [2,5,8]): col += 6
+
+                    if(box in [3,4,5]): row += 3
+
+                    elif(box in [6,7,8]): row += 6
+
+                    first.setData(Qt.ItemDataRole.DisplayRole,str(self.b[row][col]))
+                    second.setData(Qt.ItemDataRole.DisplayRole,str(self.b[row][col+1]))
+                    third.setData(Qt.ItemDataRole.DisplayRole,str(self.b[row][col+2]))
+                    
 
     ''' Resursively Backtracks to solve 0 spaces '''
     def solve(self):
@@ -105,7 +124,7 @@ class Window(QWidget):
     def findEmpties(self,b):
         for x in range (0,9):
             for y in range(0,9):
-                if (self.b[x][y] == 0): return (x,y)
+                if (self.b[x][y] in [0,'0']): return (x,y)
         return None
 
     def __init__(self):
@@ -127,7 +146,7 @@ class Window(QWidget):
 
     def clearMatrix(self):
         for a in range(9):
-            print(a)
+            #print(a)
             for b in range(9):
                 row = 0
                 col = 0
@@ -143,10 +162,10 @@ class Window(QWidget):
 
                 cellUsed = self.table[a].item(row,col)          
                 if(cellUsed is not None):
-                    print(cellUsed.type)
-                    cellUsed.setData(Qt.ItemDataRole.DisplayRole,0)
+                    #print(cellUsed.type)
+                    cellUsed.setData(Qt.ItemDataRole.DisplayRole,"0")
     def cellEntry(self):
-        print("clicked")
+        #print("clicked")
         box = int(self.sender().objectName())
 
         if (self.table[box].currentItem() is not None):
@@ -164,11 +183,10 @@ class Window(QWidget):
                 col += 3
             elif(box in [2,5,8]):
                 col += 6
-
-            self.b[row][col] = data
             print(self.b[row][col])
-        else:
-            print(box,"Is a nonetype")
+            self.b[row][col] = data
+            
+            
             
     def setupCell(self,x,table):
         
@@ -195,8 +213,8 @@ class Window(QWidget):
         self.cellDelegate = CellDelegate()
         self.table = [QTableWidget(3,3),QTableWidget(3,3),QTableWidget(3,3),QTableWidget(3,3),QTableWidget(3,3),QTableWidget(3,3),QTableWidget(3,3),QTableWidget(3,3),QTableWidget(3,3),]
         row = col = 0
-        self.focusNextPrevChild(True)
-        self.focus = QApplication.focusWidget()
+        # self.focusNextPrevChild(True)
+        # self.focus = QApplication.focusWidget()
         for x in range(9):
             
             self.table[x].setObjectName(str(x))
